@@ -2,7 +2,7 @@ FILES=about.css about.js about.xhtml bootstrap.js imaging_tools.js main.js subpr
 ADDON_VERSION=0.3
 XPI_NAME=b2g-installer-$(ADDON_VERSION)
 
-XPIS = $(XPI_NAME)-linux.xpi $(XPI_NAME)-linux64.xpi $(XPI_NAME)-mac64.xpi
+XPIS = $(XPI_NAME)-linux.xpi $(XPI_NAME)-linux64.xpi $(XPI_NAME)-mac64.xpi $(XPI_NAME)-win32.xpi
 
 all: $(XPIS)
 
@@ -12,8 +12,8 @@ define build-xpi
 	zip $(XPI_NAME)-$1.xpi -r $2 install.rdf
 endef
 
-# $(XPI_NAME)-win32.xpi: $(FILES) subprocess_worker_win.js win32
-#	@$(call build-xpi,win32, $^)
+$(XPI_NAME)-win32.xpi: $(FILES) subprocess_worker_win.js win32
+	@$(call build-xpi,win32, $^)
 
 $(XPI_NAME)-linux.xpi: $(FILES) subprocess_worker_unix.js linux
 	@$(call build-xpi,linux, $^)

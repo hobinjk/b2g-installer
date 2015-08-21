@@ -170,7 +170,7 @@ ImagingTools.prototype = {
                     resolve(true);
                   } else {
                     console.debug("Error checking gzip'd cpio", bytes," bytes to", options.to);
-                    reject(true);
+                    reject("gzip'd cpio does not exist");
                   }
                 },
                 function onFailure() {
@@ -225,7 +225,7 @@ ImagingTools.prototype = {
           if (expected.exists()) {
             resolve(true);
           } else {
-            reject(true);
+            reject(options.output + " does not exist after " + formatCommand("mkbootimg", args));
           }
         }
       });
@@ -254,7 +254,7 @@ ImagingTools.prototype = {
           if (expected.exists()) {
             resolve(true);
           } else {
-            reject(true);
+            reject(options.image + " does not exist after " + formatCommand("make_ext4fs", args));
           }
         }
       });
@@ -270,6 +270,15 @@ ImagingTools.prototype = {
     return this[name](options);
   }
 };
+
+function formatCommand(name, args) {
+  return name + '.exe ' + args.map(function(arg) {
+    if (arg.indexOf(' ') < 0) {
+      return arg;
+    }
+    return '"' + arg + '"';
+  }).join(' ');
+}
 
 module.exports = new ImagingTools();
 

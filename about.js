@@ -113,7 +113,7 @@ function getBlobs(device, root, map) {
     // Remove leading / for OS.Path.join()
     let _src = src[0] === "/" ? src.slice(1) : src;
 
-    let f = new FileUtils.File(OS.Path.join(blobsDir.path, _src));
+    let f = new FileUtils.File(OS.Path.join(blobsDir.path, convertPath(_src)));
     let p = f.parent;
     if (!p.exists()) {
       p.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0700", 8));
@@ -149,7 +149,7 @@ function getBlobs(device, root, map) {
 
         // Remove leading / for OS.Path.join()
         let _src = src[0] === "/" ? src.slice(1) : src;
-        let f = new FileUtils.File(OS.Path.join(blobsDir.path, _src));
+        let f = new FileUtils.File(OS.Path.join(blobsDir.path, convertPath(_src)));
         currentBlob++;
 
         device.pull(src, f.path).then(res => {
@@ -185,8 +185,8 @@ function buildRamdisk(from, to) {
   console.debug("Building ramdisk", ramdiskDir.path, to);
 
   let options = {
-    from: ramdiskDir.path,
-    to: to
+    from: escapeWin(ramdiskDir.path),
+    to: escapeWin(to)
   };
 
   return new Promise((resolve, reject) => {
@@ -235,6 +235,10 @@ function buildBootable(root, to) {
 
       if (deviceTree.exists()) {
         options.dt = deviceTree.path;
+      }
+
+      for (var option in options) {
+        options[option] = escapeWin(options[option]);
       }
 
       for (let i = 0; i < results.length; i++) {
@@ -332,8 +336,8 @@ function buildSystemImg(fstab) {
         }
       });
       let options = {
-        image: fstabPart.imageFile,
-        source: fstabPart.sourceDir,
+        image: (fstabPart.imageFile),
+        source: (fstabPart.sourceDir),
         cmdline_fs: args
       };
 
@@ -431,8 +435,8 @@ function injectBlobs(root, map) {
     let _src = src[0] === "/" ? src.slice(1) : src;
     let _tgt = tgt[0] === "/" ? tgt.slice(1) : tgt;
 
-    let fileSrc = new FileUtils.File(OS.Path.join(root, kBlobs, _src));
-    let fileTgt = new FileUtils.File(OS.Path.join(root, kContent, _tgt));
+    let fileSrc = new FileUtils.File(OS.Path.join(root, kBlobs, convertPath(_src)));
+    let fileTgt = new FileUtils.File(OS.Path.join(root, kContent, convertPath(_tgt)));
 
     if (fileSrc.exists() && !fileTgt.exists()) {
       console.debug("Copying", fileSrc.path, "to", fileTgt.path);
@@ -495,7 +499,7 @@ function readRecoveryFstab(root) {
         let fastbootPart = parts[0].split("/").slice(-1)[0];
         let fastbootImg  = mountPoint + ".img";
 
-        let contentDir = new FileUtils.File(OS.Path.join(root, kContent, mountPoint.toUpperCase()));
+        let contentDir = new FileUtils.File(OS.Path.join(root, kContent, convertPath(mountPoint.toUpperCase())));
         if (!contentDir.exists() || !contentDir.isDirectory()) {
           console.debug("No", contentDir.path);
           return;
@@ -701,6 +705,21 @@ function isSupportedConfig(device, supportedDevice) {
       resolve(false);
     });
   });
+}
+
+function convertPath(unixPath) {
+  // Drop a leading slash if required
+  if (unixPath.charAt(0) === "/") {
+    unixPath = unixPath.slice(1);
+  }
+  // Build up the path, converting / to \ if on Windows.
+  return unixPath.split("/").reduce(function(currentPath, directory) {
+    return OS.Path.join(currentPath, directory);
+  });
+}
+
+function escapeWin(path) {
+  return path.replace(/\\/g, '\\\\');
 }
 
 /**
